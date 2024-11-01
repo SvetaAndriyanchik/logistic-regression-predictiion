@@ -1,63 +1,33 @@
+from data_processing import load_and_normalize_data
+from gradient_descent import gradient_descent
+from logistic_model import compute_cost, predict, sigmoid
+from visualization import plot_cost_history, plot_predictions
 import numpy as np
-import pandas as pd
 
-data = pd.read_csv('customer_data.csv')
+# Load and normalize data
+features = ['Age', 'Income', 'Family_members', 'House_size']
+X, y, min_values, max_values = load_and_normalize_data('customer_data.csv', features, 'Purchased')
 
-X = data[['Age', 'Income', 'Family_members', 'House_size']].values
-y = data['Purchased'].values
-
-# Normalize
-min_values = np.min(X, axis=0)
-max_values = np.max(X, axis=0)
-
-X = (X - min_values) / (max_values - min_values)
-
-# Add bias term
-X = np.hstack((np.ones((X.shape[0], 1)), X))
-
+# Initialize parameters
 n_features = X.shape[1]
 theta = np.zeros(n_features)
-
-
-def sigmoid(z):
-    return 1 / (1 + np.exp(-z))
-
-
-def compute_cost(X, y, theta):
-    m = len(y)
-    h = sigmoid(np.dot(X, theta))
-    cost = (-1 / m) * np.sum(y * np.log(h) + (1 - y) * np.log(1 - h))
-    return cost
-
-
-def gradient_descent(X, y, theta, alpha, iterations):
-    m = len(y)
-    cost_history = []
-
-    for i in range(iterations):
-        h = sigmoid(np.dot(X, theta))
-        gradient = (1 / m) * np.dot(X.T, (h - y))
-        theta -= alpha * gradient
-        cost = compute_cost(X, y, theta)
-        cost_history.append(cost)
-
-    return theta, cost_history
-
-
 learning_rate = 0.1
 iterations = 1000
 
+# Run gradient descent
 theta_optimal, cost_history = gradient_descent(X, y, theta, learning_rate, iterations)
 
+# Display optimized weights
 print("\nOptimized weights (theta):")
 print(theta_optimal)
 
+# Plot cost history
+plot_cost_history(cost_history, iterations)
 
-def predict(X, theta):
-    probabilities = sigmoid(np.dot(X, theta))
-    return [1 if prob >= 0.5 else 0 for prob in probabilities]
+# Plot predictions vs actual values
+plot_predictions(X, y, theta_optimal)
 
-
+# Predict for a new customer
 def predict_new_customer():
     age = float(input("Enter the customer's age: "))
     income = float(input("Enter the customer's annual income (e.g., 50000): "))
@@ -69,10 +39,8 @@ def predict_new_customer():
     new_customer_with_bias = np.hstack(([1], new_customer_normalized))
 
     z_new = np.dot(new_customer_with_bias, theta_optimal)
-
     probability = sigmoid(z_new)
 
-    print(f"\nPredicted probability that the new customer will buy the vacuum cleaner: {probability:.4f}")
-
+    print(f"\nPredicted probability that the new customer will buy the product: {probability:.4f}")
 
 predict_new_customer()
